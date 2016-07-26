@@ -11,7 +11,6 @@ import cz.msebera.android.httpclient.Header;
 import iNterface.ResponseData;
 import utils.Constants;
 import utils.Log;
-import utils.TokenSavedData;
 
 /**
  * Created by maidulislam on 27/06/16.
@@ -19,24 +18,24 @@ import utils.TokenSavedData;
 public class CommonNetworkClass {
     ResponseData responseData;
     private  String data;
+    boolean bool_response=false;
 
     public CommonNetworkClass(Context activity) {
         this.responseData=(ResponseData)activity;
     }
 
-    public void NetworkHandlerResponseData(Context context, int flags, ProgressDialog pDialog, String url_links) {
-        JSONObject params = new JSONObject();
-        params = TokenSavedData.SetAccessTokenToJsonObject(context, params);
+    public void NetworkHandlerResponseData(Context context, int flags, ProgressDialog pDialog, String url_links, final int URL_ID, JSONObject params) {
+
         NetworkingAuth.post(context, url_links, params,
                 new MyAsyncHttpResponseHandler(pDialog, url_links, flags) {
 
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                         try {
-
+                            bool_response=true;
                             data=new String(responseBody, "UTF-8");
                             Log.d(TAG,"data >"+data);
-                            responseData.responseData(statusCode,data,Constants.url_initialize_access_token);
+                            responseData.responseData(statusCode,data,Constants.TAUTH_SERVICE_INITIALIZE_TOKEN,URL_ID,bool_response);
 
                         } catch (UnsupportedEncodingException e) {
                             e.printStackTrace();
@@ -48,12 +47,11 @@ public class CommonNetworkClass {
                     public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                         data="Failure";
                         Log.d(TAG,"data >"+data);
-                        responseData.responseData(statusCode,data,Constants.url_initialize_access_token);
+                        responseData.responseData(statusCode,data,Constants.TAUTH_SERVICE_INITIALIZE_TOKEN,URL_ID,bool_response);
                     }
                 }
         );
-
-        }
+    }
 
 
 

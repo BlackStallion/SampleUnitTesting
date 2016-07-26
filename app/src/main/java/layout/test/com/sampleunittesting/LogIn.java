@@ -10,10 +10,15 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.network.CommonNetworkClass;
+import com.network.LogInService;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import iNterface.ResponseData;
 import utils.Constants;
 import utils.Log;
+import utils.TokenSavedData;
 
 public class LogIn extends AppCompatActivity implements View.OnClickListener, LogInView, ResponseData{
 
@@ -24,9 +29,9 @@ public class LogIn extends AppCompatActivity implements View.OnClickListener, Lo
     private LogInPresentationLayer logInPresentationLayer;
     ProgressDialog pDialog;
     private Context context=null;
-    CommonNetworkClass commonNetworkClass;
     String TAG = "LogIn";
-
+    int statusCode=0;
+    boolean bool_response=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,7 +44,7 @@ public class LogIn extends AppCompatActivity implements View.OnClickListener, Lo
 //        responseData=new ResponseData() {
 //            @Override
 //            public void responseData(int statusCode, String responseData, String PresentUrl) {
-//                if(Constants.url_initialize_access_token.equalsIgnoreCase(PresentUrl)){
+//                if(Constants.TAUTH_SERVICE_INITIALIZE_TOKEN.equalsIgnoreCase(PresentUrl)){
 //                    Log.d(TAG,"MAIDUL TESTING>>>>>>>>>>>>>>>>>>>>>>>>");
 //                    Log.d(TAG,"responseData "+responseData);
 //                }
@@ -51,7 +56,7 @@ public class LogIn extends AppCompatActivity implements View.OnClickListener, Lo
         pDialog = new ProgressDialog(context);
         btn_LogIn.setOnClickListener(this);
 
-        logInPresentationLayer=new LogInPresentationLayer(this);
+        logInPresentationLayer=new LogInPresentationLayer(this,new LogInService());
 
 
     }
@@ -62,6 +67,11 @@ public class LogIn extends AppCompatActivity implements View.OnClickListener, Lo
     public void onClick(View view) {
 
         logInPresentationLayer.onLogInClicked();
+
+
+
+
+
 
         Toast.makeText(getApplicationContext(),"Testing",Toast.LENGTH_SHORT).show();
 //        String strUserName=edt_UserName.getText().toString();
@@ -103,9 +113,12 @@ public class LogIn extends AppCompatActivity implements View.OnClickListener, Lo
 
 
     public void getAccessToken(Context context) {
+        JSONObject params = new JSONObject();
+        params = TokenSavedData.SetAccessTokenToJsonObject(context, params);
         int flags = Constants.FLAG_SHOW_LOGS | Constants.FLAG_SHOW_LOADER;
-        commonNetworkClass=new CommonNetworkClass(context);
-        commonNetworkClass.NetworkHandlerResponseData(context,flags,pDialog,Constants.url_initialize_access_token);
+        new CommonNetworkClass(context).NetworkHandlerResponseData(context,flags,pDialog,Constants.TAUTH_SERVICE_INITIALIZE_TOKEN,Constants.ID_TOKEN,params);
+//        boolean boolToken=new CommonNetworkClass(context).NetworkHandlerResponseData(context,flags,pDialog,Constants.TAUTH_SERVICE_INITIALIZE_TOKEN,Constants.ID_TOKEN);
+//        Log.d(TAG,"boolToken >> "+boolToken);
 
     }
 
@@ -129,14 +142,78 @@ public class LogIn extends AppCompatActivity implements View.OnClickListener, Lo
         edt_Password.setError(getString(resId));
     }
 
+    @Override
+    public int getStatusCode() {
+        return statusCode;
+    }
 
     @Override
-    public void responseData(int statusCode, String responseData, String PresentUrl) {
-        if(statusCode==200) {
-            if (Constants.url_initialize_access_token.equalsIgnoreCase(PresentUrl)) {
-                Log.d(TAG, "MAIDUL TESTING>>>>>>>>>>>>>>>>>>>>>>>>" + statusCode);
-                Log.d(TAG, "responseData " + responseData);
+    public void showErrorMessageTokenResponse(int resId) {
+        Toast.makeText(context,getString(resId),Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void showLoginError(int resId) {
+        Toast.makeText(context,getString(resId),Toast.LENGTH_SHORT).show();
+    }
+
+
+    @Override
+    public void responseData(int statusCode, String responseData, String PresentUrl, int URL_ID, boolean bool_response) {
+
+
+            switch (statusCode){
+                case 200:
+                    switch (URL_ID){
+                        case Constants.ID_TOKEN:
+                            Log.d(TAG, "MAIDUL TESTING>>>>>>>>>>>>>>>>>>>>>>>>" + statusCode);
+                            Log.d(TAG, "MAIDUL TESTING>>>>>>>>>>>>>>>>>>>>>>>> responseData \n" + responseData);
+                            this.statusCode=statusCode;
+                            this.bool_response=bool_response;
+
+                            try {
+                                JSONObject a = new JSONObject(responseData);
+                                JSONObject b = a.getJSONObject("token");
+                                TokenSavedData.savePreferencesToken("token", b.toString(), LogIn.this);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            break;
+                        case Constants.ID_LOGIN:
+                            this.bool_response=bool_response;
+                            this.statusCode=statusCode;
+                            logInPresentationLayer.setResponse(bool_response);
+                            break;
+
+                    }
+                case 400:
+                    Toast.makeText(context,"Bad Token ",Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    this.statusCode=statusCode;
             }
         }
+
+    public void userLogin(String userName,String password){
+        JSONObject params = new JSONObject();
+        params = TokenSavedData.SetAccessTokenToJsonObject(context, params);
+        JSONObject a = new JSONObject();
+
+        try {
+            a.put("mobile", userName);
+            a.put("pin", password);  //need to change
+            params.put("data", a);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.e("login params", params.toString());
+        int flags = Constants.FLAG_SHOW_LOGS | Constants.FLAG_SHOW_LOADER;
+        new CommonNetworkClass(context).NetworkHandlerResponseData(context,flags,pDialog,Constants.URL_LOGIN,Constants.ID_TOKEN,params);
+
+
     }
+
+
 }
+

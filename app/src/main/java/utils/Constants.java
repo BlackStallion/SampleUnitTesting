@@ -6,7 +6,8 @@ package utils;
 public class Constants {
     final public static String BaseUrl = "http://alpha.cointribe.com";
     final public static String BaseUrlAuth = "http://tauth.cointribe.com";
-    final public static String url_initialize_access_token = "/Tauth-Service/initializeToken";
+    final public static String TAUTH_SERVICE_INITIALIZE_TOKEN = "/Tauth-Service/initializeToken";
+    final public static String URL_LOGIN = "/Backend/loginViaPin";
 
 
 

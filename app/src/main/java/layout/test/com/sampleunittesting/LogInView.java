@@ -5,12 +5,13 @@ package layout.test.com.sampleunittesting;
  */
 public interface LogInView {
     String getUseName();
-
     void showErrorMessageUserName(int resId);
 
     String getPassWord();
-
     void showErrorMessagePassword(int resId);
 
+    int getStatusCode();
+    void showErrorMessageTokenResponse(int resId);
 
+    void showLoginError(int login_error);
 }

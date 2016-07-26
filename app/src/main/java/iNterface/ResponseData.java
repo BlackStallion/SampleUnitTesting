@@ -5,5 +5,5 @@ package iNterface;
  */
 public interface ResponseData {
 
-    public void responseData(int statusCode, String responseData,String PresentUrl);
+    public void responseData(int statusCode, String responseData, String PresentUrl, int URL_ID, boolean bool_response);
 }
